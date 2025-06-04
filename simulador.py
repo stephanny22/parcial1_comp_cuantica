@@ -3,12 +3,11 @@
 from sys import argv
 import time
 import sys
-import os
-
+#Intrucciones
 d = {}
 E_aceptacion = set()
 tipo=None
-
+estado='0'
 #Identificar si el programa es AFD o MT
 programa=open(argv[1])
 for linea in programa:
@@ -28,6 +27,8 @@ for linea in programa:
     elif len(partes) == 5:
         tipo = 'MT'
         print("Has seleccionado Maquina de Turing")
+        q_actual, simbolo_lectura, simbolo_escritura, direccion, q_nuevo = partes
+        d[(q_actual, simbolo_lectura)] = (simbolo_escritura, direccion, q_nuevo)
 #INVALIDO------------------------------------------------
     else:
         print("La entrada no coincide con MT ni AFD. Por favor revise el archivo programa.txt")
@@ -46,21 +47,28 @@ if tipo == 'AFD':
     cintas=open(argv[2])
     for cinta in cintas:
         cinta=cinta.strip()
-        print(cinta)
+        print(d)
         print('La entrada',cinta," es ",mensaje[AFD(d,'0',E_aceptacion,cinta)])
     cintas.close()
 #MT------------------------------------------------
-def MT(d,q0,E_aceptacion,cinta):
+def MT(d,q0,letra):
+    #print(f"se ingresa d:{d} q0:{q0} letra:{letra}")
     q=q0
-    for simbolo in cinta:
-        q=d[q,simbolo]
-    return q in E_aceptacion
+    if(q, letra) in d:
+        #La instrucción existe
+        q, direccion, letra = d[(q, letra)]
 
-mensaje={True:'Aceptada',False:'Rechazada'}
+        return q,letra
+        #La instrucción NO existe
+    else:
+        print(f"No existe ninguna instrucción para el estado {q} y el simbolo {letra}")
+        #exit()
+        q, letra= None, None 
+        return q,letra
 
 if tipo == "MT":
     with open(argv[2]) as archivo:
-        # Leer todo el archivo y eliminar saltos de línea
+    # Leer todo el archivo y eliminar saltos de línea
         contenido = archivo.read().replace('\n', '')
 
     # Crear lista con cada letra individual
@@ -68,11 +76,15 @@ if tipo == "MT":
 
     # Imprimir cada letra en una línea
 for i in range(len(letras)):
+    
     antes = ''.join(letras[:i])
     actual = letras[i]
     despues = ''.join(letras[i+1:])
     linea = antes + f"({actual})" + despues  # Carácter seleccionado entre paréntesis
-
+    #Se evalua el valor
+    estado_final, letra_final = MT(d,estado,letras[i])
+    letras[i]=letra_final
+    estado=estado_final
     # Borra las dos líneas anteriores (si no es la primera iteración)
     if i > 0:
         sys.stdout.write('\033[2A')  # Mover cursor arriba 2 líneas
