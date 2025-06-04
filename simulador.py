@@ -17,7 +17,6 @@ for linea in programa:
         continue 
     if len(partes) == 3:
         tipo = 'AFD'
-        print("Has seleccionado Automata finito determinista")
         q, s, n = partes  # Asigna los tres elementos a q, s, n
         if '*' in q:
                 q = q.strip('*')  # Elimina el asterisco del estado
@@ -26,14 +25,22 @@ for linea in programa:
 #MT------------------------------------------------
     elif len(partes) == 5:
         tipo = 'MT'
-        print("Has seleccionado Maquina de Turing")
         q_actual, simbolo_lectura, simbolo_escritura, direccion, q_nuevo = partes
         d[(q_actual, simbolo_lectura)] = (simbolo_escritura, direccion, q_nuevo)
+programa.close()
+#Mensaje de selección
+#AFD------------------------------------------------
+if(tipo == 'AFD'):
+            print("Has seleccionado Automata finito determinista")
+#MT------------------------------------------------
+elif (tipo == 'MT'):
+        print("Has seleccionado Maquina de Turing")
+
+
 #INVALIDO------------------------------------------------
-    else:
-        print("La entrada no coincide con MT ni AFD. Por favor revise el archivo programa.txt")
-        exit(1)
-programa.close()    
+else:
+    print("La entrada no coincide con MT ni AFD. Por favor revise el archivo programa.txt")
+    exit(1)
 #AFD------------------------------------------------
 def AFD(d,q0,E_aceptacion,cinta):
     q=q0
@@ -56,13 +63,12 @@ def MT(d,q0,letra):
     q=q0
     if(q, letra) in d:
         #La instrucción existe
-        q, direccion, letra = d[(q, letra)]
+        letra, direccion, q = d[(q, letra)]
 
         return q,letra
         #La instrucción NO existe
     else:
-        print(f"No existe ninguna instrucción para el estado {q} y el simbolo {letra}")
-        #exit()
+
         q, letra= None, None 
         return q,letra
 
@@ -76,29 +82,42 @@ if tipo == "MT":
 
     # Imprimir cada letra en una línea
 for i in range(len(letras)):
-    
+
     antes = ''.join(letras[:i])
     actual = letras[i]
     despues = ''.join(letras[i+1:])
     linea = antes + f"({actual})" + despues  # Carácter seleccionado entre paréntesis
-    #Se evalua el valor
-    estado_final, letra_final = MT(d,estado,letras[i])
-    letras[i]=letra_final
-    estado=estado_final
+
+    # Se evalúa el valor
+    estado_final, letra_final = MT(d, estado, letras[i])
+
     # Borra las dos líneas anteriores (si no es la primera iteración)
     if i > 0:
-        sys.stdout.write('\033[2A')  # Mover cursor arriba 2 líneas
-
-    sys.stdout.write('\033[2K\r')  # Borra línea actual
-    sys.stdout.write(linea + '\n')  # Imprime la línea con el símbolo entre paréntesis
-    sys.stdout.write('\033[2K\r')  # Borra línea actual para la flecha
-
-    # Espacios para posicionar la flecha debajo del paréntesis izquierdo
-    posicion_flecha = len(antes)  # Posición donde abre paréntesis '(' empieza
+        sys.stdout.write('\033[2A')  # Subir 2 líneas (línea + flecha)
+        sys.stdout.write('\033[2K\r')  # Borrar línea 1 (cadena con paréntesis)
+        sys.stdout.write('\033[1B')    # Bajar 1 línea
+        sys.stdout.write('\033[2K\r')  # Borrar línea 2 (flecha)
+        sys.stdout.write('\033[1A')    # Subir 1 línea para posición correcta
+    # Mostrar la línea con el símbolo seleccionado
+    sys.stdout.write(linea + '\n')
+    posicion_flecha = len(antes)
     sys.stdout.write(' ' * posicion_flecha + ' ↑\n')
-
     sys.stdout.flush()
+
+    # Verifica si no hay transición posible
+    if estado_final is None or letra_final is None:
+        sys.stdout.write('\033[3A')   # Subir 3 líneas (o la cantidad suficiente para llegar a la línea anterior)
+        sys.stdout.write('\033[2K\r')  # Borrar esa línea
+        sys.stdout.write('\033[3B')   # Bajar 3 líneas para volver a la línea actual (con paréntesis y flecha)
+        sys.stdout.flush()
+        print("No existe ninguna instrucción para el estado y el simbolo actual")
+        exit()
+
+    letras[i] = letra_final
+    estado = estado_final
+
     time.sleep(0.2)
+
 # diccionario_programa={}
 # Estados_aceptación=set()
 # programa=open(argv[1])
