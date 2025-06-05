@@ -120,6 +120,8 @@ if tipo == "MT":
             i += 1
         elif direccion == 'l':
             i -= 1
+        elif direccion == '*':
+            pass 
         else:
             print("Dirección inválida:", direccion)
             break
