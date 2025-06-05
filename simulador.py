@@ -9,7 +9,7 @@ E_aceptacion = set()
 tipo = None
 estado = '0'
 
-# Identificar si el programa es AFD o MT
+# Determinar el tipo de autómata al leer el archivo de definiciones
 programa = open(argv[1])
 for linea in programa:
     partes = linea.strip().split()
@@ -28,11 +28,11 @@ for linea in programa:
         d[(q_actual, simbolo_lectura)] = (simbolo_escritura, direccion.lower(), q_nuevo)
 programa.close()
 
-# Mensaje de selección
+# ✅ Mensaje indicando el tipo de autómata
 if tipo == 'AFD':
-    print("Has seleccionado Automata finito determinista")
+    print("Has seleccionado Automata Finito Determinista (AFD)")
 elif tipo == 'MT':
-    print("Has seleccionado Maquina de Turing")
+    print("Has seleccionado Máquina de Turing (MT)")
 else:
     print("La entrada no coincide con MT ni AFD. Por favor revise el archivo programa.txt")
     exit(1)
@@ -41,7 +41,10 @@ else:
 def AFD(d, q0, E_aceptacion, cinta):
     q = q0
     for simbolo in cinta:
-        q = d[q, simbolo]
+        try:
+            q = d[q, simbolo]
+        except KeyError:
+            return False
     return q in E_aceptacion
 
 mensaje = {True: 'Aceptada', False: 'Rechazada'}
@@ -65,11 +68,18 @@ def MT(d, estado_actual, simbolo):
 if tipo == "MT":
     with open(argv[2]) as archivo:
         contenido = archivo.read().replace('\n', '')
-    letras = list(contenido)
 
-    i = 0  # Posición de la cabeza
+    # Buscar el índice de "->" para fijar la posición de la cabeza
+    if '->' in contenido:
+        i = contenido.index('->')
+        contenido = contenido.replace('->', '', 1)  # Elimina solo la primera aparición
+    else:
+        i = 0  # Si no se encuentra, empieza desde el inicio
+
+    letras = list(contenido)
     estado = '0'
 
+    time.sleep(2)
     while True:
         if i < 0:
             letras.insert(0, '_')
@@ -86,19 +96,21 @@ if tipo == "MT":
         despues = ''.join(letras[i+1:])
         linea = antes + f"({actual})" + despues
 
-        if i > 0:
-            sys.stdout.write('\033[2A')  # Subir 2 líneas
-        sys.stdout.write('\033[2K\r' + linea + '\n')
-        sys.stdout.write('\033[2K\r' + ' ' * len(antes) + ' ↑\n')
-        sys.stdout.flush()
-        time.sleep(0.2)
+        # CORREGIR animación
+        
+        if sys.stdout.isatty():  # Solo si es una terminal interactiva
+            
+            sys.stdout.write('\033[2A')  # Subir 2 líneas (borrar anteriores)
+            sys.stdout.write('\033[2K\r' + linea + '\n')  # Línea con cinta
+            sys.stdout.write('\033[2K\r' + ' ' * len(antes) + ' ↑\n')  # Línea con flecha
+            sys.stdout.flush()
+        else:
+            print(linea)
+            print(' ' * len(antes) + ' ↑')
+        time.sleep(0.5)
 
         if estado_final is None:
-            sys.stdout.write('\033[3A')
-            sys.stdout.write('\033[2K\r')
-            sys.stdout.write('\033[3B')
-            sys.stdout.flush()
-            print("No existe ninguna instrucción para el estado y el símbolo actual")
+            print(f"El carácter '{simbolo_actual}' no está disponible para validación en el estado '{estado}'")
             break
 
         letras[i] = simbolo_escrito
